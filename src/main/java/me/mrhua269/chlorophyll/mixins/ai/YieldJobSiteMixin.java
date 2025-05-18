@@ -29,7 +29,7 @@ public class YieldJobSiteMixin {
         return BehaviorBuilder.create((instance) -> instance.group(instance.present(MemoryModuleType.POTENTIAL_JOB_SITE), instance.absent(MemoryModuleType.JOB_SITE), instance.present(MemoryModuleType.NEAREST_LIVING_ENTITIES), instance.registered(MemoryModuleType.WALK_TARGET), instance.registered(MemoryModuleType.LOOK_TARGET)).apply(instance, (memoryAccessor, memoryAccessor2, memoryAccessor3, memoryAccessor4, memoryAccessor5) -> (serverLevel, villager, l) -> {
             if (villager.isBaby()) {
                 return false;
-            } else if (villager.getVillagerData().getProfession() != VillagerProfession.NONE) {
+            } else if (!villager.getVillagerData().profession().is(VillagerProfession.NONE)) {
                 return false;
             } else {
                 final GlobalPos globalPos = instance.get(memoryAccessor);

@@ -22,3 +22,4 @@ accessible method net/minecraft/world/entity/ai/behavior/YieldJobSite nearbyWant
 accessible method net/minecraft/world/entity/ai/behavior/GoToPotentialJobSite stop (Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/npc/Villager;J)V
 accessible method net/minecraft/world/entity/LivingEntity tickDeath ()V
 accessible method net/minecraft/server/level/ServerLevel tickTime ()V
+accessible method net/minecraft/server/level/ServerPlayer$RespawnConfig getDimensionOrDefault (Lnet/minecraft/server/level/ServerPlayer$RespawnConfig;)Lnet/minecraft/resources/ResourceKey;

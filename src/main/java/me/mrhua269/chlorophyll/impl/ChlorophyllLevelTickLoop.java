@@ -3,6 +3,7 @@ package me.mrhua269.chlorophyll.impl;
 import com.google.common.collect.Queues;
 import com.google.common.collect.Sets;
 import com.mojang.logging.LogUtils;
+import me.mrhua269.chlorophyll.Chlorophyll;
 import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingEntity;
 import me.mrhua269.chlorophyll.utils.TickThread;
 import net.minecraft.network.Connection;
@@ -12,6 +13,7 @@ import net.minecraft.network.protocol.common.ClientboundDisconnectPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.util.TimeUtil;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.storage.ServerLevelData;
 import org.jetbrains.annotations.NotNull;
@@ -38,6 +40,8 @@ public class ChlorophyllLevelTickLoop implements Runnable, Executor {
     private long lastTickTime;
     private volatile boolean scheduleNext = true;
     private volatile boolean isTicking = false;
+
+    private long lastNspt = -1;
 
     public ChlorophyllLevelTickLoop(ServerLevel ownedLevel, ScheduledThreadPoolExecutor masterPool) {
         this.ownedLevel = ownedLevel;
@@ -72,9 +76,21 @@ public class ChlorophyllLevelTickLoop implements Runnable, Executor {
         currentWorker.currentTickLoop = this;
         this.isTicking = true;
 
+        if (this.lastNspt == 0) {
+            Chlorophyll.server.tickRateManager().endTickWork();
+        }
+
         this.tickCount++;
         final long tickStart = System.nanoTime();
+
+        long nsptThisTick = Chlorophyll.server.tickRateManager().nanosecondsPerTick();
+        if (Chlorophyll.server.tickRateManager().isSprinting()) {
+            nsptThisTick = 0;
+        }
+        this.lastNspt = nsptThisTick;
+
         try {
+            this.processPendingTasks();
             this.internalTick();
         }catch (Exception e){
             logger.error("Error while ticking level", e);
@@ -82,7 +98,7 @@ public class ChlorophyllLevelTickLoop implements Runnable, Executor {
             currentWorker.currentTickLoop = null;
             this.isTicking = false;
             final long timeEscaped = System.nanoTime() - tickStart;
-            final long sleep = 1000000000L / 20L - timeEscaped;
+            final long sleep = Math.max(0, nsptThisTick - timeEscaped);
 
             this.lastTickTime = timeEscaped;
 
@@ -184,18 +200,21 @@ public class ChlorophyllLevelTickLoop implements Runnable, Executor {
         }
     }
 
-    private void internalTick(){
+    private void processPendingTasks() {
         this.processMainThreadTasks(); // Process the main thread tasks
-
         this.tickEntitySchedulers(); // Process entity tasks(Packets from player)
+    }
 
+    private void internalTick(){
         // Vanilla tickChildren
         for (Connection connection : this.connections){
             ((ServerGamePacketListenerImpl) connection.getPacketListener()).suspendFlushing();
         }
 
         this.ownedLevel.getServer().synchronizeTime(this.ownedLevel);
+
         this.ownedLevel.tick(() -> true); // Always run the updates
+
         this.tickConnections();
 
         for (Connection connection : this.connections){
@@ -208,10 +227,22 @@ public class ChlorophyllLevelTickLoop implements Runnable, Executor {
         // Auto save
         this.autoSaveCountDown--;
         if (this.autoSaveCountDown <= 0){
-            this.autoSaveCountDown = 6000;
+            this.autoSaveCountDown = this.computeNextAutosaveInterval();
             this.savePlayers();
             this.saveLevel();
         }
+    }
+
+    private int computeNextAutosaveInterval() {
+        float f;
+        if (Chlorophyll.server.tickRateManager().isSprinting()) {
+            long l = this.lastTickTime + 1L;
+            f = (float) TimeUtil.NANOSECONDS_PER_SECOND / (float)l;
+        } else {
+            f = Chlorophyll.server.tickRateManager().tickrate();
+        }
+
+        return Math.max(100, (int)(f * 300.0F));
     }
 
     public void schedule(Runnable task){

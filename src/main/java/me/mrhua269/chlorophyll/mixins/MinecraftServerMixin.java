@@ -5,6 +5,7 @@ import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingLevel;
 import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingMinecraftServer;
 import me.mrhua269.chlorophyll.utils.TickThread;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ServerTickRateManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.network.ServerConnectionListener;
 import net.minecraft.server.players.PlayerList;
@@ -31,6 +32,10 @@ public abstract class MinecraftServerMixin implements ITaskSchedulingMinecraftSe
     @Shadow @Final private List<Runnable> tickables;
 
     @Shadow private int tickCount;
+    @Shadow @Final private ServerTickRateManager tickRateManager;
+
+    @Shadow protected abstract boolean haveTime();
+
     @Unique private boolean shouldPollChunkTask = true;
 
     @Inject(method = "pollTaskInternal", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/ServerTickRateManager;isSprinting()Z", shift = At.Shift.BEFORE), cancellable = true, order = 80)
@@ -55,9 +60,11 @@ public abstract class MinecraftServerMixin implements ITaskSchedulingMinecraftSe
             ((ITaskSchedulingLevel) level).chlorophyll$setupTickLoop();
         }
 
-        // Time
-        for (ServerLevel level : this.getAllLevels()) {
-            level.tickTime();
+        if (!Chlorophyll.server.tickRateManager().isFrozen()) {
+            // Time
+            for (ServerLevel level : this.getAllLevels()) {
+                level.tickTime();
+            }
         }
 
         // Tick base connections

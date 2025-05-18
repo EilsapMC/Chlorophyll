@@ -1,33 +1,31 @@
 package me.mrhua269.chlorophyll.utils;
 
+import ca.spottedleaf.moonrise.libs.ca.spottedleaf.concurrentutil.collection.MultiThreadedQueue;
+
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class EntityTaskScheduler {
-    private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
-    private volatile boolean destroyed = false;
+    private final MultiThreadedQueue<Runnable> tasks = new MultiThreadedQueue<>();
 
     public void destroy() {
-        this.destroyed = true;
-        this.runTasks(); // the final flush
+        Runnable task;
+        while ((task = tasks.pollOrBlockAdds()) != null) {
+            task.run();
+        }
     }
 
     public boolean schedule(Runnable task) {
-        if (this.destroyed) {
-            return false;
-        }
-
-        taskQueue.add(task);
-        return true;
+        return tasks.offer(task);
     }
 
     public boolean isDestroyed() {
-        return this.destroyed;
+        return this.tasks.isAddBlocked();
     }
 
     public void runTasks() {
         Runnable task;
-        while ((task = taskQueue.poll()) != null) {
+        while ((task = this.tasks.poll()) != null) {
             task.run();
         }
     }

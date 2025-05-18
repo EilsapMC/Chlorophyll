@@ -28,19 +28,6 @@ import java.util.concurrent.CompletableFuture;
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerMixin extends Player {
 
-    @Shadow @Nullable public abstract BlockPos getRespawnPosition();
-
-    @Shadow public abstract float getRespawnAngle();
-
-    @Shadow public abstract boolean isRespawnForced();
-
-    @Shadow public abstract ResourceKey<Level> getRespawnDimension();
-
-    @Shadow
-    private static Optional<ServerPlayer.RespawnPosAngle> findRespawnAndUseSpawnBlock(ServerLevel serverLevel, BlockPos blockPos, float f, boolean bl, boolean bl2) {
-        return Optional.empty();
-    }
-
     @Shadow @Final public MinecraftServer server;
 
     @Shadow public ServerGamePacketListenerImpl connection;
@@ -63,6 +50,13 @@ public abstract class ServerPlayerMixin extends Player {
 
     @Shadow public int lastSentFood;
 
+    @Shadow @Nullable public abstract ServerPlayer.RespawnConfig getRespawnConfig();
+
+    @Shadow
+    private static Optional<ServerPlayer.RespawnPosAngle> findRespawnAndUseSpawnBlock(ServerLevel serverLevel, ServerPlayer.RespawnConfig respawnConfig, boolean bl) {
+        return Optional.empty();
+    }
+
     public ServerPlayerMixin(Level level, BlockPos blockPos, float f, GameProfile gameProfile) {
         super(level, blockPos, f, gameProfile);
     }
@@ -73,27 +67,30 @@ public abstract class ServerPlayerMixin extends Player {
      */
     @Overwrite
     public TeleportTransition findRespawnPositionAndUseSpawnBlock(boolean bl, TeleportTransition.PostTeleportTransition postTeleportTransition) {
-        BlockPos blockPos = this.getRespawnPosition();
-        float f = this.getRespawnAngle();
-        boolean bl2 = this.isRespawnForced();
-        ServerLevel serverLevel = this.server.getLevel(this.getRespawnDimension());
+        ServerPlayer.RespawnConfig respawnConfig = this.getRespawnConfig();
+        ServerLevel serverLevel = this.server.getLevel(ServerPlayer.RespawnConfig.getDimensionOrDefault(respawnConfig));
 
-        if (serverLevel != null && blockPos != null) {
-            Optional<ServerPlayer.RespawnPosAngle> optional = ((ITaskSchedulingLevel) this.level()).chlorophyll$getTickLoop().spinWait(CompletableFuture.supplyAsync(
-                    () -> findRespawnAndUseSpawnBlock(serverLevel, blockPos, f, bl2, bl),
-                    this.server.overworld().getChunkSource().mainThreadProcessor
-            ));
+        if (serverLevel != null && respawnConfig != null) {
+            CompletableFuture<ServerPlayer.RespawnPosAngle> respawnSearch = CompletableFuture.supplyAsync(() -> {
+                return findRespawnAndUseSpawnBlock(serverLevel, respawnConfig, bl).orElse(null);
+            }, ((ITaskSchedulingLevel) serverLevel).chlorophyll$getTickLoop());
 
-            if (optional.isPresent()) {
-                ServerPlayer.RespawnPosAngle respawnPosAngle = optional.get();
+            ((ITaskSchedulingLevel) this.level()).chlorophyll$getTickLoop().spinWait(respawnSearch);
+
+            ServerPlayer.RespawnPosAngle respawnPosAngle = respawnSearch.join();
+
+            if (respawnPosAngle != null) {
                 return new TeleportTransition(serverLevel, respawnPosAngle.position(), Vec3.ZERO, respawnPosAngle.yaw(), 0.0F, postTeleportTransition);
             } else {
-                return ((ITaskSchedulingLevel) this.level()).chlorophyll$getTickLoop().spinWait(
-                        CompletableFuture.supplyAsync(() ->
-                                TeleportTransition.missingRespawnBlock(this.server.overworld(), this, postTeleportTransition),
-                                this.server.overworld().getChunkSource().mainThreadProcessor
-                        )
-                );
+                final ServerLevel overworld = this.server.overworld();
+
+                final CompletableFuture<TeleportTransition> searchingTask = CompletableFuture.supplyAsync(() -> {
+                    return TeleportTransition.missingRespawnBlock(this.server.overworld(), this, postTeleportTransition);
+                }, ((ITaskSchedulingLevel) overworld).chlorophyll$getTickLoop());
+
+                ((ITaskSchedulingLevel) this.level()).chlorophyll$getTickLoop().spinWait(searchingTask);
+
+                return searchingTask.join();
             }
         } else {
             return new TeleportTransition(this.server.overworld(), this, postTeleportTransition);
@@ -131,19 +128,21 @@ public abstract class ServerPlayerMixin extends Player {
                 LevelData levelData = serverLevel.getLevelData();
                 this.connection.send(new ClientboundRespawnPacket(this.createCommonSpawnInfo(serverLevel), (byte)3));
                 this.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
-                PlayerList playerList = this.server.getPlayerList();
-                playerList.sendPlayerPermissionLevel(thisEntity);
-                serverLevel2.removePlayerImmediately(thisEntity, RemovalReason.CHANGED_DIMENSION);
+
                 ((ITaskSchedulingLevel) serverLevel2).chlorophyll$getTickLoop().removeConnection(this.connection.connection);
+                serverLevel2.removePlayerImmediately(thisEntity, RemovalReason.CHANGED_DIMENSION);
+
+                this.unsetRemoved();
 
                 ((ITaskSchedulingLevel) serverLevel).chlorophyll$getTickLoop().schedule(() -> {
                     ((ITaskSchedulingLevel) serverLevel).chlorophyll$getTickLoop().addConnection(this.connection.connection);
-                    this.unsetRemoved();
 
                     if (resourceKey == Level.OVERWORLD && serverLevel.dimension() == Level.NETHER) {
                         this.enteredNetherPosition = this.position();
                     }
 
+                    PlayerList playerList = this.server.getPlayerList();
+                    playerList.sendPlayerPermissionLevel(thisEntity);
 
                     this.setServerLevel(serverLevel);
                     this.connection.teleport(PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());

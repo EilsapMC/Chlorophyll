@@ -50,7 +50,7 @@ public abstract class ServerLevelMixin implements ITaskSchedulingLevel {
      * @reason Worldized ticking
      */
     @Overwrite
-    public void onBlockStateChange(BlockPos blockPos, BlockState blockState, BlockState blockState2) {
+    public void updatePOIOnBlockStateChange(BlockPos blockPos, BlockState blockState, BlockState blockState2) {
         Optional<Holder<PoiType>> optional = PoiTypes.forState(blockState);
         Optional<Holder<PoiType>> optional2 = PoiTypes.forState(blockState2);
         if (!Objects.equals(optional, optional2)) {

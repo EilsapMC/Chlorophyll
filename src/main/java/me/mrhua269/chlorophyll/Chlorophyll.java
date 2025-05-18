@@ -1,11 +1,13 @@
 package me.mrhua269.chlorophyll;
 
 import com.mojang.logging.LogUtils;
+import me.mrhua269.chlorophyll.commands.StatusCommand;
 import me.mrhua269.chlorophyll.utils.TickThread;
 import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingLevel;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import org.slf4j.Logger;
@@ -69,5 +71,9 @@ public class Chlorophyll implements ModInitializer {
 
         chlorophyllConfig = AutoConfig.getConfigHolder(ChlorophyllConfig.class).getConfig();
         initExecutor();
+
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            StatusCommand.register(dispatcher);
+        });
     }
 }

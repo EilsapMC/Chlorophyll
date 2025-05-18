@@ -2,7 +2,6 @@ package me.mrhua269.chlorophyll.mixins.network;
 
 import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingEntity;
 import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingLevel;
-import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerCommonPacketListenerImpl;

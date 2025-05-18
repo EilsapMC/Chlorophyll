@@ -1,9 +1,9 @@
 package me.mrhua269.chlorophyll.mixins;
 
 import me.mrhua269.chlorophyll.Chlorophyll;
+import me.mrhua269.chlorophyll.utils.TickThread;
 import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingLevel;
 import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingMinecraftServer;
-import me.mrhua269.chlorophyll.utils.TickThread;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerTickRateManager;
 import net.minecraft.server.level.ServerLevel;

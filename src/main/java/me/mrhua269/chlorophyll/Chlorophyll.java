@@ -1,8 +1,8 @@
 package me.mrhua269.chlorophyll;
 
 import com.mojang.logging.LogUtils;
-import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingLevel;
 import me.mrhua269.chlorophyll.utils.TickThread;
+import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingLevel;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 import net.fabricmc.api.ModInitializer;

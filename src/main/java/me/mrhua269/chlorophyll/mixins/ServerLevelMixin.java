@@ -19,7 +19,6 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelMixin implements ITaskSchedulingLevel {
@@ -73,6 +72,6 @@ public abstract class ServerLevelMixin implements ITaskSchedulingLevel {
 
     @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerLevel;tickTime()V"))
     private void tickTime$mainThreadReturn(ServerLevel serverLevel) {
-        return; // As we don't wanna tick this off server thread because some threading issue
+        // As we don't wanna tick this off server thread because some threading issue
     }
 }

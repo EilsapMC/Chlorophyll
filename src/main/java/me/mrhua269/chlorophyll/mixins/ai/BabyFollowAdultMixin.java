@@ -24,12 +24,12 @@ public class BabyFollowAdultMixin {
      */
     @Contract("_, _ -> new")
     @Overwrite
-    public static @NotNull OneShot<AgeableMob> create(UniformInt uniformInt, Function<LivingEntity, Float> function) {
-        return BehaviorBuilder.create((instance) -> instance.group(instance.present(MemoryModuleType.NEAREST_VISIBLE_ADULT), instance.registered(MemoryModuleType.LOOK_TARGET), instance.absent(MemoryModuleType.WALK_TARGET)).apply(instance, (closetMemory, lookTargetMemory, walkTargetMemory) -> (serverLevel, self, l) -> {
+    public static @NotNull OneShot<AgeableMob> create(UniformInt uniformInt, Function<LivingEntity, Float> function, MemoryModuleType<? extends LivingEntity> memoryModuleType, boolean bl) {
+        return BehaviorBuilder.create((instance) -> instance.group(instance.present(memoryModuleType), instance.registered(MemoryModuleType.LOOK_TARGET), instance.absent(MemoryModuleType.WALK_TARGET)).apply(instance, (closetMemory, lookTargetMemory, walkTargetMemory) -> (serverLevel, self, l) -> {
             if (!self.isBaby()) {
                 return false;
             } else {
-                AgeableMob closetAdult = instance.get(closetMemory);
+                AgeableMob closetAdult = (AgeableMob) instance.get(closetMemory);
 
                 if (closetAdult.level() != self.level()) {
                     lookTargetMemory.erase();
@@ -38,8 +38,8 @@ public class BabyFollowAdultMixin {
                 }
 
                 if (self.closerThan(closetAdult, uniformInt.getMaxValue() + 1) && !self.closerThan(closetAdult, uniformInt.getMinValue())) {
-                    WalkTarget walkTarget = new WalkTarget(new EntityTracker(closetAdult, false), function.apply(self), uniformInt.getMinValue() - 1);
-                    lookTargetMemory.set(new EntityTracker(closetAdult, true));
+                    WalkTarget walkTarget = new WalkTarget(new EntityTracker(closetAdult, bl, bl), function.apply(self), uniformInt.getMinValue() - 1);
+                    lookTargetMemory.set(new EntityTracker(closetAdult, true, bl));
                     walkTargetMemory.set(walkTarget);
                     return true;
                 } else {

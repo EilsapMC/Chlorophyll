@@ -24,7 +24,7 @@ public class ServerCommonPacketListenerImplMixin {
         final ServerCommonPacketListenerImpl thisHandler = (ServerCommonPacketListenerImpl) (Object) this;
 
         if (thisHandler instanceof ServerGamePacketListenerImpl gamePacketListener){
-            ((ITaskSchedulingLevel) gamePacketListener.player.serverLevel()).chlorophyll$getTickLoop().executeBlocking(runnable);
+            ((ITaskSchedulingLevel) gamePacketListener.player.level()).chlorophyll$getTickLoop().executeBlocking(runnable);
             return;
         }
 

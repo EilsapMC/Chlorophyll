@@ -2,7 +2,6 @@ package me.mrhua269.chlorophyll.mixins;
 
 import com.mojang.authlib.GameProfile;
 import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingLevel;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -32,7 +31,7 @@ public abstract class ServerPlayerMixin extends Player {
 
     @Shadow public ServerGamePacketListenerImpl connection;
 
-    @Shadow public abstract ServerLevel serverLevel();
+    @Shadow public abstract ServerLevel level();
 
     @Shadow public boolean isChangingDimension;
 
@@ -57,8 +56,8 @@ public abstract class ServerPlayerMixin extends Player {
         return Optional.empty();
     }
 
-    public ServerPlayerMixin(Level level, BlockPos blockPos, float f, GameProfile gameProfile) {
-        super(level, blockPos, f, gameProfile);
+    public ServerPlayerMixin(Level level, GameProfile gameProfile) {
+        super(level, gameProfile);
     }
 
     /**
@@ -113,7 +112,7 @@ public abstract class ServerPlayerMixin extends Player {
             }
 
             ServerLevel serverLevel = teleportTransition.newLevel();
-            ServerLevel serverLevel2 = this.serverLevel();
+            ServerLevel serverLevel2 = this.level();
             ResourceKey<Level> resourceKey = serverLevel2.dimension();
             if (!teleportTransition.asPassenger()) {
                 this.stopRiding();

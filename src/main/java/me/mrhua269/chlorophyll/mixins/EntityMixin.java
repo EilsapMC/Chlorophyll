@@ -39,7 +39,7 @@ public abstract class EntityMixin implements ITaskSchedulingEntity {
      * @reason Worldized ticking
      */
     @Overwrite
-    private Entity teleportCrossDimension(ServerLevel serverLevel, TeleportTransition teleportTransition) {
+    private Entity teleportCrossDimension(ServerLevel serverLevel, ServerLevel serverLevel2, TeleportTransition teleportTransition) {
         List<Entity> list = this.getPassengers();
         List<Entity> list2 = new ArrayList<>(list.size());
         this.ejectPassengers();
@@ -51,7 +51,7 @@ public abstract class EntityMixin implements ITaskSchedulingEntity {
             }
         }
 
-        Entity entity = this.getType().create(serverLevel, EntitySpawnReason.DIMENSION_TRAVEL);
+        Entity entity = this.getType().create(serverLevel2, EntitySpawnReason.DIMENSION_TRAVEL);
         if (entity == null) {
             return null;
         } else {
@@ -62,9 +62,9 @@ public abstract class EntityMixin implements ITaskSchedulingEntity {
             entity.teleportSetPosition(PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());
 
 
-            ((ITaskSchedulingLevel) serverLevel).chlorophyll$getTickLoop().schedule(() -> {
-                serverLevel.addDuringTeleport(entity);
-                serverLevel.resetEmptyTime();
+            ((ITaskSchedulingLevel) serverLevel2).chlorophyll$getTickLoop().schedule(() -> {
+                serverLevel2.addDuringTeleport(entity);
+                serverLevel2.resetEmptyTime();
 
                 for (Entity entity3 : list2) {
                     entity3.startRiding(entity, true);

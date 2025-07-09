@@ -50,7 +50,7 @@ public abstract class PlayerListMixin {
 
     @Inject(method = "placeNewPlayer", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerLevel;addNewPlayer(Lnet/minecraft/server/level/ServerPlayer;)V", shift = At.Shift.BEFORE))
     public void initConnectionListForPlayer(Connection connection, @NotNull ServerPlayer serverPlayer, CommonListenerCookie commonListenerCookie, CallbackInfo ci){
-        ((ITaskSchedulingLevel) serverPlayer.serverLevel()).chlorophyll$getTickLoop().addConnection(connection);
+        ((ITaskSchedulingLevel) serverPlayer.level()).chlorophyll$getTickLoop().addConnection(connection);
     }
 
     /**
@@ -60,8 +60,8 @@ public abstract class PlayerListMixin {
     @Overwrite
     /*public ServerPlayer respawn(ServerPlayer serverPlayer, boolean bl, Entity.RemovalReason removalReason) {
         this.players.remove(serverPlayer);
-        serverPlayer.serverLevel().removePlayerImmediately(serverPlayer, removalReason);
-        ((ITaskSchedulingLevel) serverPlayer.serverLevel()).chlorophyll$getTickLoop().removeConnection(serverPlayer.connection.connection);
+        serverPlayer.level().removePlayerImmediately(serverPlayer, removalReason);
+        ((ITaskSchedulingLevel) serverPlayer.level()).chlorophyll$getTickLoop().removeConnection(serverPlayer.connection.connection);
 
         TeleportTransition teleportTransition = serverPlayer.findRespawnPositionAndUseSpawnBlock(!bl, TeleportTransition.DO_NOTHING);
         ServerLevel targetLevel = teleportTransition.newLevel();
@@ -87,7 +87,7 @@ public abstract class PlayerListMixin {
         }
 
         byte dataToKeep = (byte) (bl ? 1 : 0);
-        ServerLevel serverLevel2 = serverPlayer2.serverLevel();
+        ServerLevel serverLevel2 = serverPlayer2.level();
         LevelData levelData = serverLevel2.getLevelData();
         serverPlayer2.connection.send(new ClientboundRespawnPacket(serverPlayer2.createCommonSpawnInfo(serverLevel2), dataToKeep));
         serverPlayer2.connection.teleport(serverPlayer2.getX(), serverPlayer2.getY(), serverPlayer2.getZ(), serverPlayer2.getYRot(), serverPlayer2.getXRot());
@@ -131,8 +131,8 @@ public abstract class PlayerListMixin {
     public ServerPlayer respawn(ServerPlayer dead, boolean bl, Entity.RemovalReason removalReason) {
         this.players.remove(dead);
         // remove old connection
-        ((ITaskSchedulingLevel) dead.serverLevel()).chlorophyll$getTickLoop().removeConnection(dead.connection.connection);
-        dead.serverLevel().removePlayerImmediately(dead, removalReason);
+        ((ITaskSchedulingLevel) dead.level()).chlorophyll$getTickLoop().removeConnection(dead.connection.connection);
+        dead.level().removePlayerImmediately(dead, removalReason);
         TeleportTransition teleportTransition = dead.findRespawnPositionAndUseSpawnBlock(!bl, TeleportTransition.DO_NOTHING);
         ServerLevel destinationLevel = teleportTransition.newLevel();
         ServerPlayer newPlayerToPlace = new ServerPlayer(this.server, destinationLevel, dead.getGameProfile(), dead.clientInformation());
@@ -155,7 +155,7 @@ public abstract class PlayerListMixin {
         }
 
         byte b = (byte)(bl ? 1 : 0);
-        ServerLevel serverLevel2 = newPlayerToPlace.serverLevel();
+        ServerLevel serverLevel2 = newPlayerToPlace.level();
         LevelData levelData = serverLevel2.getLevelData();
 
         this.players.add(newPlayerToPlace);
@@ -200,6 +200,6 @@ public abstract class PlayerListMixin {
 
     @Redirect(method = "disconnectAllPlayersWithProfile", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;disconnect(Lnet/minecraft/network/chat/Component;)V"))
     public void chlorophyll$disconnectAllPlayersWithProfile(ServerGamePacketListenerImpl serverGamePacketListenerImpl, Component component) {
-        ((ITaskSchedulingLevel) serverGamePacketListenerImpl.player.serverLevel()).chlorophyll$getTickLoop().execute(() -> serverGamePacketListenerImpl.disconnect(component));
+        ((ITaskSchedulingLevel) serverGamePacketListenerImpl.player.level()).chlorophyll$getTickLoop().execute(() -> serverGamePacketListenerImpl.disconnect(component));
     }
 }

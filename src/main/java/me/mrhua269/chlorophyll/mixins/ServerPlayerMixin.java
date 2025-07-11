@@ -32,9 +32,11 @@ public abstract class ServerPlayerMixin extends Player {
 
     @Shadow public ServerGamePacketListenerImpl connection;
 
-    @Shadow public abstract ServerLevel serverLevel();
-
     @Shadow public boolean isChangingDimension;
+
+    public ServerPlayerMixin(Level level, GameProfile gameProfile) {
+        super(level, gameProfile);
+    }
 
     @Shadow public abstract CommonPlayerSpawnInfo createCommonSpawnInfo(ServerLevel serverLevel);
 
@@ -55,10 +57,6 @@ public abstract class ServerPlayerMixin extends Player {
     @Shadow
     private static Optional<ServerPlayer.RespawnPosAngle> findRespawnAndUseSpawnBlock(ServerLevel serverLevel, ServerPlayer.RespawnConfig respawnConfig, boolean bl) {
         return Optional.empty();
-    }
-
-    public ServerPlayerMixin(Level level, BlockPos blockPos, float f, GameProfile gameProfile) {
-        super(level, blockPos, f, gameProfile);
     }
 
     /**
@@ -113,7 +111,7 @@ public abstract class ServerPlayerMixin extends Player {
             }
 
             ServerLevel serverLevel = teleportTransition.newLevel();
-            ServerLevel serverLevel2 = this.serverLevel();
+            ServerLevel serverLevel2 = (ServerLevel) this.level();
             ResourceKey<Level> resourceKey = serverLevel2.dimension();
             if (!teleportTransition.asPassenger()) {
                 this.stopRiding();

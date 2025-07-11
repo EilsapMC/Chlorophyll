@@ -18,11 +18,11 @@ public class ServerGamePacketListenerImplMixin {
 
     @Redirect(method = "tryHandleChat", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;execute(Ljava/lang/Runnable;)V"))
     public void mainThreadTask$handleChat(MinecraftServer instance, Runnable runnable){
-        ((ITaskSchedulingLevel) this.player.serverLevel()).chlorophyll$getTickLoop().schedule(runnable);
+        ((ITaskSchedulingLevel) this.player.level()).chlorophyll$getTickLoop().schedule(runnable);
     }
 
     @Redirect(method = "<init>", at = @At(value = "NEW", target = "Lnet/minecraft/util/FutureChain;"))
     public FutureChain chatSignFutureChain$init(Executor executor){
-        return new FutureChain(((ITaskSchedulingLevel) this.player.serverLevel()).chlorophyll$getTickLoop());
+        return new FutureChain(((ITaskSchedulingLevel) this.player.level()).chlorophyll$getTickLoop());
     }
 }

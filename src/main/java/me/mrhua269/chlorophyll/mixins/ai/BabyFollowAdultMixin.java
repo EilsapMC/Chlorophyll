@@ -22,25 +22,24 @@ public class BabyFollowAdultMixin {
      * @author MrHua269
      * @reason Worldized ticking
      */
-    @Contract("_, _ -> new")
+    @Contract("_, _, _, _ -> new")
     @Overwrite
-    public static @NotNull OneShot<AgeableMob> create(UniformInt uniformInt, Function<LivingEntity, Float> function) {
-        return BehaviorBuilder.create((instance) -> instance.group(instance.present(MemoryModuleType.NEAREST_VISIBLE_ADULT), instance.registered(MemoryModuleType.LOOK_TARGET), instance.absent(MemoryModuleType.WALK_TARGET)).apply(instance, (closetMemory, lookTargetMemory, walkTargetMemory) -> (serverLevel, self, l) -> {
-            if (!self.isBaby()) {
+    public static @NotNull OneShot<LivingEntity> create(UniformInt uniformInt, Function<LivingEntity, Float> function, MemoryModuleType<? extends LivingEntity> memoryModuleType, boolean bl) {
+        return BehaviorBuilder.create((instance) -> instance.group(instance.present(memoryModuleType), instance.registered(MemoryModuleType.LOOK_TARGET), instance.absent(MemoryModuleType.WALK_TARGET)).apply(instance, (memoryAccessor, memoryAccessor2, memoryAccessor3) -> (serverLevel, livingEntity, l) -> {
+            if (!livingEntity.isBaby()) {
                 return false;
             } else {
-                AgeableMob closetAdult = instance.get(closetMemory);
+                LivingEntity livingEntity2 = (LivingEntity)instance.get(memoryAccessor);
 
-                if (closetAdult.level() != self.level()) {
-                    lookTargetMemory.erase();
-                    walkTargetMemory.erase();
+                if (livingEntity2.level() != livingEntity.level()) {
+                    memoryAccessor.erase();
                     return true;
                 }
 
-                if (self.closerThan(closetAdult, uniformInt.getMaxValue() + 1) && !self.closerThan(closetAdult, uniformInt.getMinValue())) {
-                    WalkTarget walkTarget = new WalkTarget(new EntityTracker(closetAdult, false), function.apply(self), uniformInt.getMinValue() - 1);
-                    lookTargetMemory.set(new EntityTracker(closetAdult, true));
-                    walkTargetMemory.set(walkTarget);
+                if (livingEntity.closerThan(livingEntity2, (double)(uniformInt.getMaxValue() + 1)) && !livingEntity.closerThan(livingEntity2, (double)uniformInt.getMinValue())) {
+                    WalkTarget walkTarget = new WalkTarget(new EntityTracker(livingEntity2, bl, bl), (Float)function.apply(livingEntity), uniformInt.getMinValue() - 1);
+                    memoryAccessor2.set(new EntityTracker(livingEntity2, true, bl));
+                    memoryAccessor3.set(walkTarget);
                     return true;
                 } else {
                     return false;

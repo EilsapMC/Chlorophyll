@@ -4,12 +4,15 @@ import me.mrhua269.chlorophyll.utils.EntityTaskScheduler;
 import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingEntity;
 import me.mrhua269.chlorophyll.utils.bridges.ITaskSchedulingLevel;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.profiling.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.portal.TeleportTransition;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -30,6 +33,8 @@ public abstract class EntityMixin implements ITaskSchedulingEntity {
 
     @Shadow public abstract EntityType<?> getType();
 
+    @Shadow protected abstract void teleportSpectators(TeleportTransition teleportTransition, ServerLevel serverLevel);
+
     @Unique
     @Final
     private final EntityTaskScheduler taskScheduler = new EntityTaskScheduler();
@@ -39,19 +44,19 @@ public abstract class EntityMixin implements ITaskSchedulingEntity {
      * @reason Worldized ticking
      */
     @Overwrite
-    private Entity teleportCrossDimension(ServerLevel serverLevel, TeleportTransition teleportTransition) {
+    private @Nullable Entity teleportCrossDimension(ServerLevel serverLevel, ServerLevel serverLevel2, TeleportTransition teleportTransition) {
         List<Entity> list = this.getPassengers();
-        List<Entity> list2 = new ArrayList<>(list.size());
+        List<Entity> list2 = new ArrayList(list.size());
         this.ejectPassengers();
 
-        for (Entity entity : list) {
+        for(Entity entity : list) {
             Entity entity2 = entity.teleport(this.calculatePassengerTransition(teleportTransition, entity));
             if (entity2 != null) {
                 list2.add(entity2);
             }
         }
 
-        Entity entity = this.getType().create(serverLevel, EntitySpawnReason.DIMENSION_TRAVEL);
+        Entity entity = this.getType().create(serverLevel2, EntitySpawnReason.DIMENSION_TRAVEL);
         if (entity == null) {
             return null;
         } else {
@@ -59,18 +64,19 @@ public abstract class EntityMixin implements ITaskSchedulingEntity {
 
             entity.restoreFrom(thisEntity);
             this.removeAfterChangingDimensions();
+
             entity.teleportSetPosition(PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());
 
+            ((ITaskSchedulingLevel) serverLevel2).chlorophyll$getTickLoop().schedule(() -> {
+                serverLevel2.addDuringTeleport(entity);
 
-            ((ITaskSchedulingLevel) serverLevel).chlorophyll$getTickLoop().schedule(() -> {
-                serverLevel.addDuringTeleport(entity);
-                serverLevel.resetEmptyTime();
-
-                for (Entity entity3 : list2) {
+                for(Entity entity3 : list2) {
                     entity3.startRiding(entity, true);
                 }
 
+                serverLevel2.resetEmptyTime();
                 teleportTransition.postTeleportTransition().onTransition(entity);
+                this.teleportSpectators(teleportTransition, serverLevel);
             });
 
             return entity;

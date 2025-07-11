@@ -21,7 +21,7 @@ public abstract class ServerConfigurationPacketListenerImplMixin {
     @Redirect(method = "handleConfigurationFinished", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/players/PlayerList;placeNewPlayer(Lnet/minecraft/network/Connection;Lnet/minecraft/server/level/ServerPlayer;Lnet/minecraft/server/network/CommonListenerCookie;)V"))
     public void redirect$placeNewPlayer(PlayerList playerList, Connection connection, @NotNull ServerPlayer serverPlayer, CommonListenerCookie commonListenerCookie) {
         final ServerCommonPacketListenerImpl thisCommonHandler = (ServerCommonPacketListenerImpl) (Object) this;
-        ((ITaskSchedulingLevel) serverPlayer.serverLevel()).chlorophyll$getTickLoop().schedule(() ->
+        ((ITaskSchedulingLevel) serverPlayer.level()).chlorophyll$getTickLoop().schedule(() ->
                 playerList.placeNewPlayer(thisCommonHandler.connection, serverPlayer, thisCommonHandler.createCookie(this.clientInformation))
         );
     }

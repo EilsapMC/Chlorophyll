@@ -23,7 +23,7 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     modImplementation "maven.modrinth:moonrise-opt:5dCZzMGn"
-    modApi("me.shedaniel.cloth:cloth-config-fabric:18.0.145") {
+    modApi("me.shedaniel.cloth:cloth-config-fabric:19.0.147") {
         exclude(group: "net.fabricmc.fabric-api")
     }
 }
